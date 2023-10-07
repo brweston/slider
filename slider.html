@@ -1,0 +1,141 @@
+
+<!-- Slider -->
+<script>
+    class Slider {
+        constructor(name, P, N, plus=0) {
+            this.name = name;
+            this.parentId = name + "s-slider";
+            this.childClass = name;
+            this.N=N; //total num elements
+            this.P = P; //num per page
+            this.plus = plus;
+
+            this.S = Math.ceil(N/P); //num slides
+            this.activePage = 1;
+            this.nextEnabled = true;
+            this.prevEnabled = true;
+        }
+
+        //Prevent Scrolling horizontally on sliders
+        preventHorizontalScroll(e) {
+            this.getparent().style.overflowX="hidden";
+        }
+
+        getparent() {
+            return document.getElementById(this.parentId);
+        }
+
+        getpagination() {
+            return document.getElementById(this.name + "s-pagination")
+        }
+
+        getpagecounter() {
+            return this.getpagination().querySelector(".current-page");
+        }
+
+        gettotalcounter() {
+            return this.getpagination().querySelector(".total-slider");
+        }
+
+        //lower num per page by 1
+        setp (P) {
+            if (P < 1) { return; }
+            this.P = P;
+            Array.from(document.querySelectorAll("." + this.childClass)).forEach(el=>{
+                el.style.width=`calc(100%/${this.P})`;
+            })
+            this.S = Math.ceil(this.N/this.P);
+
+            //if there is actually buttons available
+            if (this.N > this.P && this.S > 1) { //double check just cause
+                this.gettotalcounter().innerText = Math.ceil(this.S);
+            }
+        }
+
+        prev () {
+            // check out of bounds
+            if (this.activePage <= 1 || !this.prevEnabled) { return; }
+
+            //disable temp.
+            this.prevEnabled = false;
+
+            //ensure that scrolling is re-enabled
+            var slider = this.getparent();
+            slider.style.overflowX="auto";
+
+            // slide
+            var amt = document.querySelector("." + this.childClass).offsetWidth;
+            slider.scrollLeft -= amt*this.P + this.plus;
+
+            
+
+            const onscrollend = () => {
+                // update button text
+                this.activePage--;
+                this.getpagecounter().innerText = this.activePage;
+                this.prevEnabled = true;
+                slider.removeEventListener("scrollend", onscrollend);
+            }
+
+            slider.addEventListener("scrollend", onscrollend);
+        }
+
+        next() {
+            // check out of bounds
+            if (this.activePage >= this.S || !this.nextEnabled) { return; }
+
+            // disable next button
+            this.nextEnabled = false;
+
+            //allow to slide
+            var slider = this.getparent();
+            slider.style.overflowX="auto";
+
+            // find out how many pages on next slide
+            var numToSlide = this.N - (this.activePage*this.P);
+            if (numToSlide > this.P) {
+                numToSlide = this.P;
+            }
+
+            // slide
+            var amt = document.querySelector("." + this.childClass).offsetWidth;
+            slider.scrollLeft += amt*numToSlide + (this.plus*numToSlide);
+
+            const onscrollend = () => {
+                this.activePage ++;
+                this.getpagecounter().innerText = this.activePage;
+                this.nextEnabled = true;
+                slider.removeEventListener("scrollend", onscrollend);
+            }
+
+            slider.addEventListener("scrollend", onscrollend);
+            
+        }
+    }
+
+</script>
+ <div class="slider-bedrooms" style="margin-top: 20px; border-top: 1px solid #cacaca; padding-bottom:20px;">
+
+                        <!-- Header -->
+                        <div class="slider-header" style="margin-top: 20px;">
+                            <h3 style="margin-bottom:15px;">Bedrooms</h3>
+                                <div class="slick-pagination" id="bedrooms-pagination">
+                                    <div class="slider-pagination"><span class="slider-pagination"><span class="page-slider bedrooms-page-slider current-page">1</span>/<span class="total-slider num-bedroom-pages"><?= ceil(count($bedroomImgs)/3) ?></span></span></div>
+                                    <button onclick="bedroomsSlider.prev()" class="slider-arrow arrow-previous"><span ><</span></button>
+                                    <button onclick="bedroomsSlider.next()" class="slider-arrow arrow-next"><span >></span></button>
+                                </div>
+                        </div><!-- End Header -->
+
+                        <!-- Images -->
+                        <div class="img-slider" id="bedrooms-slider" onmousewheel="bedroomsSlider.preventHorizontalScroll(event)" style="display:flex;flex-direction:row;height: fit-content;overflow: auto;scroll-behavior: smooth;scroll-snap-type: x mandatory;">
+                            <?php foreach($bedroomImgs as $i=>$imgData) : ?>
+                                <?php $img = $imgData[0]; $parts = explode(',', $imgData[1]); ?>
+                                <div class="slider-item bedroom" style="box-sizing:border-box;width:calc(100% / 3);flex-shrink: 0;padding-right:10px;">
+                                    <img class="first-img" style="border-radius: 8px;" src="<?= $img ?>">
+                                    <h4 style="margin-bottom:10px;"><?= $parts[0] ?></h4>
+                                    <span><?= $parts[1] ?></span><br>
+                                    <small><?= $parts[2] ?></small>
+                                </div>
+                            <?php endforeach; ?>
+                        </div><!--End Images -->
+                    </div> <!-- End of bedrooms Slider -->
